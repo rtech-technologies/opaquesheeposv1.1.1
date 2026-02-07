@@ -140,15 +140,25 @@ void kmain(void) {
 
 ## Build Instructions
 
-### Requirements
+### Requirements (most specific names)
 
+**Debian/Ubuntu package names**
+- `build-essential` (or `gcc`)
+- `nasm`
+- `binutils`
+- `gnu-efi`
+- `qemu-system-x86` (**this package provides the `qemu-system-x86_64` binary**)
+- `mtools`
+- `dosfstools`
+- `ovmf`
+
+**Binary/tool names you will use**
 - `gcc` or `clang`
 - `nasm`
 - `ld`
-- `gnu-efi` development files (for UEFI)
 - `qemu-system-x86_64`
-- `mtools` + `dosfstools` (for FAT image creation)
-- OVMF firmware files (`OVMF_CODE.fd` and `OVMF_VARS.fd`)
+- `mcopy`, `mmd`, `mkfs.fat`
+- OVMF firmware files: `/usr/share/OVMF/OVMF_CODE.fd` and `/usr/share/OVMF/OVMF_VARS.fd`
 
 ### Build the kernel
 
@@ -192,6 +202,13 @@ qemu-system-x86_64 \
   -drive if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE.fd \
   -drive if=pflash,format=raw,file=/usr/share/OVMF/OVMF_VARS.fd \
   -drive file=build/fat.img,format=raw
+```
+
+## Quick install (Debian/Ubuntu)
+
+```
+sudo apt update
+sudo apt install -y build-essential binutils nasm gnu-efi qemu-system-x86 mtools dosfstools ovmf
 ```
 
 ## Notes
