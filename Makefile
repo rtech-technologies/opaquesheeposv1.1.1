@@ -25,6 +25,7 @@ KERNEL_OBJS := \
 	$(BUILD_DIR)/filelib.o \
 	$(BUILD_DIR)/mem.o \
 	$(BUILD_DIR)/fat.o \
+	$(BUILD_DIR)/services.o \
 	$(BUILD_DIR)/stup_init.o
 
 all: $(BUILD_DIR)/kernel.elf $(BUILD_DIR)/kernel.bin
@@ -55,6 +56,9 @@ $(BUILD_DIR)/mem.o: kernel/libs/mem.c | $(BUILD_DIR)
 $(BUILD_DIR)/fat.o: kernel/libs/fat.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+$(BUILD_DIR)/services.o: kernel/libs/services.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
 $(BUILD_DIR)/stup_init.o: kernel/stup/init.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
@@ -63,6 +67,26 @@ $(BUILD_DIR)/kernel.elf: $(KERNEL_OBJS)
 
 $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.elf
 	$(OBJCOPY) -O binary $< $@
+
+setup:
+	sudo apt update
+	sudo apt install -y build-essential binutils nasm gnu-efi qemu-system-x86 mtools dosfstools ovmf
+
+fat_img: all uefi
+	mkdir -p $(BUILD_DIR)/efi/EFI/BOOT
+	cp $(BUILD_DIR)/BOOTX64.EFI $(BUILD_DIR)/efi/EFI/BOOT/BOOTX64.EFI
+	cp $(BUILD_DIR)/kernel.bin $(BUILD_DIR)/efi/kernel.bin
+	dd if=/dev/zero of=$(BUILD_DIR)/fat.img bs=1M count=64
+	mkfs.fat -F 32 $(BUILD_DIR)/fat.img
+	mmd -i $(BUILD_DIR)/fat.img ::/EFI ::/EFI/BOOT
+	mcopy -i $(BUILD_DIR)/fat.img $(BUILD_DIR)/efi/EFI/BOOT/BOOTX64.EFI ::/EFI/BOOT/BOOTX64.EFI
+	mcopy -i $(BUILD_DIR)/fat.img $(BUILD_DIR)/efi/kernel.bin ::/kernel.bin
+
+run: fat_img
+	qemu-system-x86_64 \
+		-drive if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE.fd \
+		-drive if=pflash,format=raw,file=/usr/share/OVMF/OVMF_VARS.fd \
+		-drive file=$(BUILD_DIR)/fat.img,format=raw
 
 clean:
 	rm -rf $(BUILD_DIR)

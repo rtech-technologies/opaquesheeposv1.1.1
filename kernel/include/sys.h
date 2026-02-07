@@ -22,6 +22,9 @@ void *memset_simple(void *dest, int value, size_t count);
 void fat_init(void);
 void stup_init(void);
 
+const char *svc_get_os_name(void);
+const char *svc_get_os_version(void);
+
 void kstup(void);
 void kmain(void);
 void panic(const char *message);
