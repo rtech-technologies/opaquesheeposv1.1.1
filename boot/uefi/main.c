@@ -12,14 +12,14 @@ static EFI_STATUS open_kernel(EFI_HANDLE image, EFI_FILE_PROTOCOL **file) {
     EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *fs = NULL;
     EFI_FILE_PROTOCOL *root = NULL;
 
-    status = uefi_call_wrapper(BS->HandleProtocol, 3, image, &LoadedImageProtocol, (void **)&loaded_image);
+    status = uefi_call_wrapper(BS->HandleProtocol, 3, image, &gEfiLoadedImageProtocolGuid, (void **)&loaded_image);
     if (EFI_ERROR(status)) {
         Print(L"HandleProtocol(LoadedImage) failed: %r\n", status);
         return status;
     }
 
     status = uefi_call_wrapper(BS->HandleProtocol, 3, loaded_image->DeviceHandle,
-                               &SimpleFileSystemProtocol, (void **)&fs);
+                               &gEfiSimpleFileSystemProtocolGuid, (void **)&fs);
     if (EFI_ERROR(status)) {
         Print(L"HandleProtocol(SimpleFS) failed: %r\n", status);
         return status;
@@ -50,7 +50,7 @@ static EFI_STATUS load_kernel(EFI_FILE_PROTOCOL *file, EFI_PHYSICAL_ADDRESS *ent
         return status;
     }
 
-    status = uefi_call_wrapper(file->GetInfo, 4, file, &FileInfoGuid, &info_size, info);
+    status = uefi_call_wrapper(file->GetInfo, 4, file, &gEfiFileInfoGuid, &info_size, info);
     if (EFI_ERROR(status)) {
         Print(L"GetInfo(FileInfo) failed: %r\n", status);
         uefi_call_wrapper(BS->FreePool, 1, info);
