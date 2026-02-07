@@ -6,52 +6,51 @@ For full API and APL (application) coding documentation, read the in-depth manua
 
 ## Basics
 
-- **Main entry:** `kernel/unice64/main.c`
+- **Main entry:** `kernel/unice64/main.c` (Template Kernel)
 - **Primary header:** `kernel/include/sys.h`
-- **Libraries:** `kernel/libs/` (each lib is one file)
+- **Libraries:** `kernel/libs/` (one file per library)
 - **Startup system:** `kernel/stup/` (`kstup()` runs once)
 
-## Quick Start (Build + Run)
+## Quick Start (Automated)
 
-### Install requirements (Debian/Ubuntu)
-
+### 1. Setup Environment
+Install all necessary build and emulation dependencies:
+```bash
+make setup
 ```
-sudo apt update
-sudo apt install -y build-essential binutils nasm gnu-efi qemu-system-x86 mtools dosfstools ovmf
-```
 
-### Build
-
-```
+### 2. Build OS
+Compile the kernel and UEFI bootloader:
+```bash
 make
-make uefi
+```
+*Note: The Makefile automatically detects if `x86_64-elf-gcc` is present and falls back to host `gcc` if needed.*
+
+### 3. Create Boot Image
+Generate the FAT32 boot image (`build/fat.img`):
+```bash
+make fat_img
 ```
 
-Artifacts:
-- `build/kernel.elf`
-- `build/kernel.bin`
-- `build/BOOTX64.EFI`
-
-### Run (UEFI + QEMU)
-
-```
-mkdir -p build/efi/EFI/BOOT
-cp build/BOOTX64.EFI build/efi/EFI/BOOT/BOOTX64.EFI
-cp build/kernel.bin build/efi/kernel.bin
-
-dd if=/dev/zero of=build/fat.img bs=1M count=64
-mkfs.fat -F 32 build/fat.img
-mmd -i build/fat.img ::/EFI ::/EFI/BOOT
-mcopy -i build/fat.img build/efi/EFI/BOOT/BOOTX64.EFI ::/EFI/BOOT/BOOTX64.EFI
-mcopy -i build/fat.img build/efi/kernel.bin ::/kernel.bin
+### 4. Run OS
+Launch OpaqueSheep OS in QEMU:
+```bash
+make run
 ```
 
-```
-qemu-system-x86_64 \
-  -drive if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE.fd \
-  -drive if=pflash,format=raw,file=/usr/share/OVMF/OVMF_VARS.fd \
-  -drive file=build/fat.img,format=raw
-```
+## Advanced Usage
+
+### Manual Build Steps
+- `make all`: Builds the kernel binary.
+- `make uefi`: Builds the UEFI bootloader (`BOOTX64.EFI`).
+- `make clean`: Removes all build artifacts.
+
+### Repository Structure
+- `boot/`: UEFI bootloader source.
+- `kernel/include/`: Global kernel headers.
+- `kernel/libs/`: Modular kernel libraries and services.
+- `kernel/unice64/`: Kernel entry point and main loop.
+- `build/`: Output directory for binaries and images (git-ignored).
 
 ## Where to Learn More
 
