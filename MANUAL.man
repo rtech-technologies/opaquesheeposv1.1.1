@@ -1,0 +1,142 @@
+OpaqueSheep OS Manual (Professional Shell OS)
+============================================
+
+This manual provides the in-depth APL (application) coding documentation for
+OpaqueSheep OS. It is meant to be included with the OS and used as the primary
+reference for writing high-level kernel logic and shell workflows.
+
+Table of Contents
+-----------------
+1. Philosophy and Execution Model
+2. Boot Flow and Startup System
+3. APL Coding Model (High-Level API)
+4. Shell Loop Patterns
+5. File and Directory API
+6. Error Handling and panic()
+7. Extending Libraries
+8. Vendor Configuration
+9. Build and Run Reference
+
+1) Philosophy and Execution Model
+---------------------------------
+OpaqueSheep OS is designed so that:
+- `kmain()` reads like a script.
+- All complex work lives in `kernel/libs/`.
+- Each library is a single file for clarity and portability.
+
+2) Boot Flow and Startup System
+-------------------------------
+- `kstup()` runs once at boot to initialize the OS.
+- `kstup()` should call:
+  - `stup_init()` (startup system)
+  - `fat_init()` (filesystem scaffolding)
+- `kmain()` is your main loop (shell, services, etc.).
+
+3) APL Coding Model (High-Level API)
+------------------------------------
+Include the main header:
+
+    #include "sys.h"
+
+Available high-level calls:
+
+- print(const char *message)
+  Prints text to the console.
+
+- input(const char *prompt)
+  Prints the prompt (if provided) and returns the latest input line.
+
+- fwrite(const void *data, size_t size, size_t count)
+- fappend(const void *data, size_t size, size_t count)
+- fread(void *data, size_t size, size_t count)
+- fdelete(const char *path)
+
+- dmake(const char *path)
+- dremove(const char *path)
+- dmove(const char *from, const char *to)
+
+- fFormat(const char *label)
+  Formats the default filesystem with an optional label.
+
+- memcpy_simple(...), memset_simple(...)
+
+- panic(const char *message)
+  Halts the CPU in a fatal error state.
+
+4) Shell Loop Patterns
+----------------------
+Minimal professional shell:
+
+    void kmain(void) {
+        print("OpaqueSheep Shell\n");
+        print("Type 'help' for commands.\n");
+
+        for (;;) {
+            const char *cmd = input("> ");
+            if (!cmd) {
+                continue;
+            }
+
+            if (cmd[0] == 'h') {
+                print("help - list commands\n");
+            } else if (cmd[0] == 'f') {
+                print("format - initialize filesystem\n");
+            } else {
+                print("unknown command\n");
+            }
+        }
+    }
+
+5) File and Directory API
+-------------------------
+Typical usage pattern:
+
+    const char *data = "Hello\n";
+    fwrite(data, 1, 6);
+    fappend(data, 1, 6);
+
+    dmake("/apps");
+    dmove("/apps", "/system/apps");
+    dremove("/system/apps");
+
+    fFormat("OPAQUESHEEP");
+
+6) Error Handling and panic()
+-----------------------------
+Use `panic()` only for fatal errors that cannot be recovered.
+
+    if (!cmd) {
+        panic("input() failed\n");
+    }
+
+7) Extending Libraries
+----------------------
+- Add new functions in `kernel/libs/<name>.c` and `<name>.h`.
+- Expose them in `kernel/include/sys.h` if you want them available to `kmain()`.
+- Keep the interface clean and high-level.
+
+8) Vendor Configuration
+-----------------------
+`vendor.cfg` stores OS metadata for branding, versioning, and flavor selection.
+
+Example:
+
+    name = OpaqueSheep OS
+    version = 1.1.1
+    flavor = developer
+    arch = x86_64
+    boot = uefi
+
+9) Build and Run Reference
+--------------------------
+Build:
+
+    make
+    make uefi
+
+Run in QEMU (UEFI):
+
+    qemu-system-x86_64 \
+      -drive if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE.fd \
+      -drive if=pflash,format=raw,file=/usr/share/OVMF/OVMF_VARS.fd \
+      -drive file=build/fat.img,format=raw
