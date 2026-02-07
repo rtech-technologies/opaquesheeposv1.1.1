@@ -14,6 +14,9 @@ else
 endif
 
 AS := nasm
+MKFS_FAT := $(shell which mkfs.fat 2>/dev/null || which /usr/sbin/mkfs.fat 2>/dev/null || which /sbin/mkfs.fat 2>/dev/null)
+MMD      := $(shell which mmd 2>/dev/null || which /usr/bin/mmd 2>/dev/null)
+MCOPY    := $(shell which mcopy 2>/dev/null || which /usr/bin/mcopy 2>/dev/null)
 EFI_CC ?= gcc
 EFI_LD ?= ld
 EFI_OBJCOPY ?= objcopy
@@ -91,14 +94,17 @@ setup:
 	sudo apt install -y build-essential binutils nasm gnu-efi qemu-system-x86 mtools dosfstools ovmf
 
 fat_img: $(BUILD_DIR)/kernel.bin $(BUILD_DIR)/BOOTX64.EFI
+	@if [ -z "$(MKFS_FAT)" ]; then echo "Error: mkfs.fat not found. Run 'make setup' first."; exit 1; fi
+	@if [ -z "$(MMD)" ]; then echo "Error: mmd not found. Run 'make setup' first."; exit 1; fi
+	@if [ -z "$(MCOPY)" ]; then echo "Error: mcopy not found. Run 'make setup' first."; exit 1; fi
 	mkdir -p $(BUILD_DIR)/efi/EFI/BOOT
 	cp $(BUILD_DIR)/BOOTX64.EFI $(BUILD_DIR)/efi/EFI/BOOT/BOOTX64.EFI
 	cp $(BUILD_DIR)/kernel.bin $(BUILD_DIR)/efi/kernel.bin
 	dd if=/dev/zero of=$(BUILD_DIR)/fat.img bs=1M count=64
-	mkfs.fat -F 32 $(BUILD_DIR)/fat.img
-	MTOOLSRC=/dev/null mmd -i $(BUILD_DIR)/fat.img ::/EFI ::/EFI/BOOT
-	MTOOLSRC=/dev/null mcopy -i $(BUILD_DIR)/fat.img $(BUILD_DIR)/efi/EFI/BOOT/BOOTX64.EFI ::/EFI/BOOT/BOOTX64.EFI
-	MTOOLSRC=/dev/null mcopy -i $(BUILD_DIR)/fat.img $(BUILD_DIR)/efi/kernel.bin ::/kernel.bin
+	$(MKFS_FAT) -F 32 $(BUILD_DIR)/fat.img
+	MTOOLSRC=/dev/null $(MMD) -i $(BUILD_DIR)/fat.img ::/EFI ::/EFI/BOOT
+	MTOOLSRC=/dev/null $(MCOPY) -i $(BUILD_DIR)/fat.img $(BUILD_DIR)/efi/EFI/BOOT/BOOTX64.EFI ::/EFI/BOOT/BOOTX64.EFI
+	MTOOLSRC=/dev/null $(MCOPY) -i $(BUILD_DIR)/fat.img $(BUILD_DIR)/efi/kernel.bin ::/kernel.bin
 
 # OVMF Path Detection
 OVMF_FD := $(firstword $(wildcard /usr/share/ovmf/OVMF.fd) \
