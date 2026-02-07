@@ -38,7 +38,7 @@ KERNEL_OBJS := \
 	$(BUILD_DIR)/services.o \
 	$(BUILD_DIR)/stup_init.o
 
-all: $(BUILD_DIR)/kernel.elf $(BUILD_DIR)/kernel.bin
+all: fat_img
 
 uefi: $(BUILD_DIR)/BOOTX64.EFI
 
@@ -82,7 +82,7 @@ setup:
 	sudo apt update
 	sudo apt install -y build-essential binutils nasm gnu-efi qemu-system-x86 mtools dosfstools ovmf
 
-fat_img: all uefi
+fat_img: $(BUILD_DIR)/kernel.bin $(BUILD_DIR)/BOOTX64.EFI
 	mkdir -p $(BUILD_DIR)/efi/EFI/BOOT
 	cp $(BUILD_DIR)/BOOTX64.EFI $(BUILD_DIR)/efi/EFI/BOOT/BOOTX64.EFI
 	cp $(BUILD_DIR)/kernel.bin $(BUILD_DIR)/efi/kernel.bin
