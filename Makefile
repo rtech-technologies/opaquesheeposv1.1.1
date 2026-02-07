@@ -2,14 +2,14 @@ ARCH ?= x86_64
 CROSS ?= x86_64-elf
 
 # Compiler auto-detection for Debian/Ubuntu environments
-ifeq ($(shell which $(CROSS)-gcc 2>/dev/null),)
-    override CROSS :=
-    CC := gcc
-    LD := ld
+CC := $(CROSS)-gcc
+ifeq ($(shell command -v $(CC) 2>/dev/null),)
+    $(info Cross-compiler $(CC) not found, falling back to host tools...)
+    CC      := gcc
+    LD      := ld
     OBJCOPY := objcopy
 else
-    CC := $(CROSS)-gcc
-    LD := $(CROSS)-ld
+    LD      := $(CROSS)-ld
     OBJCOPY := $(CROSS)-objcopy
 endif
 
@@ -18,9 +18,17 @@ EFI_CC ?= gcc
 EFI_LD ?= ld
 EFI_OBJCOPY ?= objcopy
 EFI_INC ?= /usr/include/efi
-EFI_LIB ?= /usr/lib
-EFI_CRT0 ?= $(EFI_LIB)/crt0-efi-x86_64.o
-EFI_LDS ?= $(EFI_LIB)/elf_x86_64_efi.lds
+EFI_LIB_SEARCH := /usr/lib /usr/lib64 /usr/lib/x86_64-linux-gnu /usr/lib/efi
+EFI_CRT0 := $(firstword $(foreach dir,$(EFI_LIB_SEARCH),$(wildcard $(dir)/crt0-efi-x86_64.o)))
+EFI_LDS  := $(firstword $(foreach dir,$(EFI_LIB_SEARCH),$(wildcard $(dir)/elf_x86_64_efi.lds)))
+
+# Fallbacks if detection fails
+ifeq ($(EFI_CRT0),)
+    EFI_CRT0 := /usr/lib/crt0-efi-x86_64.o
+endif
+ifeq ($(EFI_LDS),)
+    EFI_LDS := /usr/lib/elf_x86_64_efi.lds
+endif
 
 CFLAGS := -std=gnu11 -ffreestanding -fno-stack-protector -fno-pic -mno-red-zone -Wall -Wextra -Ikernel/include -Ikernel/libs -Ikernel/stup
 LDFLAGS := -T kernel/linker/kernel.ld -nostdlib
@@ -92,11 +100,16 @@ fat_img: $(BUILD_DIR)/kernel.bin $(BUILD_DIR)/BOOTX64.EFI
 	MTOOLSRC=/dev/null mcopy -i $(BUILD_DIR)/fat.img $(BUILD_DIR)/efi/EFI/BOOT/BOOTX64.EFI ::/EFI/BOOT/BOOTX64.EFI
 	MTOOLSRC=/dev/null mcopy -i $(BUILD_DIR)/fat.img $(BUILD_DIR)/efi/kernel.bin ::/kernel.bin
 
+# OVMF Path Detection
+OVMF_FD := $(firstword $(wildcard /usr/share/ovmf/OVMF.fd) \
+                       $(wildcard /usr/share/qemu/OVMF.fd) \
+                       $(wildcard /usr/share/OVMF/OVMF.fd))
+
 run: fat_img
 	@which qemu-system-x86_64 > /dev/null || (echo "qemu-system-x86_64 not found. run 'make setup'"; exit 1)
-	@test -f /usr/share/ovmf/OVMF.fd || (echo "OVMF.fd not found. run 'make setup'"; exit 1)
+	@test -f "$(OVMF_FD)" || (echo "OVMF.fd not found. run 'make setup'"; exit 1)
 	qemu-system-x86_64 \
-		-bios /usr/share/ovmf/OVMF.fd \
+		-bios $(OVMF_FD) \
 		-drive file=$(BUILD_DIR)/fat.img,format=raw
 
 clean:
