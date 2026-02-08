@@ -13,26 +13,20 @@ For full API and APL (application) coding documentation, read the in-depth manua
 
 ## Quick Start (Automated)
 
-### 1. Setup Environment
-Install all necessary build and emulation dependencies:
+### 1. Setup Environment (One-time)
+Install all necessary build and emulation dependencies (Debian/Ubuntu):
 ```bash
 make setup
 ```
 
 ### 2. Build OS
-Compile the kernel and UEFI bootloader:
+Compile the kernel, bootloader, and generate the bootable FAT32 image:
 ```bash
 make
 ```
 *Note: The Makefile automatically detects if `x86_64-elf-gcc` is present and falls back to host `gcc` if needed.*
 
-### 3. Create Boot Image
-Generate the FAT32 boot image (`build/fat.img`):
-```bash
-make fat_img
-```
-
-### 4. Run OS
+### 3. Run OS
 Launch OpaqueSheep OS in QEMU:
 ```bash
 make run
@@ -40,9 +34,10 @@ make run
 
 ## Advanced Usage
 
-### Manual Build Steps
-- `make all`: Builds the kernel binary.
-- `make uefi`: Builds the UEFI bootloader (`BOOTX64.EFI`).
+### Makefile Targets
+- `make all`: (Default) Builds everything and creates `build/fat.img`.
+- `make fat_img`: Specifically triggers the bootable image creation.
+- `make uefi`: Builds the UEFI bootloader only.
 - `make clean`: Removes all build artifacts.
 
 ### Repository Structure
