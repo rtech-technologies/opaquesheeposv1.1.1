@@ -81,6 +81,7 @@ static EFI_STATUS load_kernel(EFI_FILE_PROTOCOL *file, EFI_PHYSICAL_ADDRESS *ent
 
 EFI_STATUS EFIAPI efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE *system_table) {
     InitializeLib(image, system_table);
+    Print(L"OpaqueSheep UEFI Bootloader starting...\n");
 
     EFI_FILE_PROTOCOL *kernel = NULL;
     EFI_STATUS status = open_kernel(image, &kernel);
@@ -126,6 +127,8 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE *system_table) {
         Print(L"ExitBootServices failed: %r\n", status);
         return status;
     }
+
+    Print(L"Jumping to kernel at 0x%lx...\n", entry);
 
     kernel_entry_t kernel_entry = (kernel_entry_t)(UINTN)entry;
     kernel_entry();

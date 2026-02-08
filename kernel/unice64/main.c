@@ -25,6 +25,7 @@ void kmain(void) {
     print(" v");
     print(svc_get_os_version());
     print(" - Template Kernel Loaded.\n");
+    print("Note: Output is sent to both VGA (0xB8000) and Serial (COM1).\n");
     print("Type 'h' for help.\n\n");
 
     // Main shell loop template
