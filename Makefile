@@ -121,7 +121,7 @@ run: fat_img
 clean:
 	rm -rf $(BUILD_DIR)
 
-$(BUILD_DIR)/BOOTX64.EFI: boot/uefi/main.c | $(BUILD_DIR)
+$(BUILD_DIR)/BOOTX64.EFI: boot/uefi/Os*2bootmanager.c | $(BUILD_DIR)
 	$(EFI_CC) -I$(EFI_INC) -I$(EFI_INC)/x86_64 -fpic -fshort-wchar -mno-red-zone \
 		-fno-stack-protector -DEFI_FUNCTION_WRAPPER -c $< -o $(BUILD_DIR)/boot.o
 	$(EFI_LD) -nostdlib -znocombreloc -T $(EFI_LDS) -shared -Bsymbolic \
