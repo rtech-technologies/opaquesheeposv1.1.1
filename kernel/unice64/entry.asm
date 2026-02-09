@@ -4,12 +4,12 @@ bits 64
 global _start
 extern kmain
 extern kstup
+extern iolib_init
 
 _start:
     mov rsp, stack_top
-    push rdi
+    call iolib_init
     call kstup
-    pop rdi
     call kmain
 .hang:
     hlt

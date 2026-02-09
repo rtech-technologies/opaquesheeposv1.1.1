@@ -11,8 +11,7 @@
 /**
  * Kernel Startup - Runs once after bootloader transitions to kernel
  */
-void kstup(boot_info_t *binfo) {
-    iolib_init(binfo);
+void kstup(void) {
     stup_init(); // Initialize startup system
     fat_init();  // Initialize filesystem
 }
@@ -20,8 +19,7 @@ void kstup(boot_info_t *binfo) {
 /**
  * Kernel Main - Your OS logic goes here
  */
-void kmain(boot_info_t *binfo) {
-    (void)binfo;
+void kmain(void) {
     // Welcome message using system services
     print(svc_get_os_name());
     print(" v");
@@ -41,6 +39,7 @@ void kmain(boot_info_t *binfo) {
         if (cmd[0] == 'h') {
             print("h - show this help\n");
             print("i - show system info\n");
+            print("f - format filesystem\n");
             print("p - trigger kernel panic\n");
         } else if (cmd[0] == 'i') {
             print("OS Name: ");
@@ -48,6 +47,8 @@ void kmain(boot_info_t *binfo) {
             print("\nVersion: ");
             print(svc_get_os_version());
             print("\n");
+        } else if (cmd[0] == 'f') {
+            fFormat("OPAQUESHEEP");
         } else if (cmd[0] == 'p') {
             panic("User-triggered kernel panic.");
         } else {
@@ -62,9 +63,11 @@ void kmain(boot_info_t *binfo) {
  * Kernel Panic - Called on unrecoverable errors
  */
 void panic(const char *message) {
-    print("\n!!! KERNEL PANIC !!!\n");
+    iolib_clear(0xFF0000); // Red Background
+    iolib_reset_cursor();
+    print("!!! KERNEL PANIC !!!\n\n");
     print(message);
-    print("\nSystem Halted.\n");
+    print("\n\nSystem Halted.\n");
 
     for (;;) {
         __asm__ volatile ("hlt");

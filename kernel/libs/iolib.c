@@ -2,6 +2,7 @@
 #include "sys.h"
 #include "font.h"
 
+static boot_info_t g_binfo_data;
 static boot_info_t *g_binfo = NULL;
 
 static inline void outb(uint16_t port, uint8_t val) {
@@ -38,15 +39,27 @@ static void serial_putc(char c) {
 static size_t cursor_row = 0;
 static size_t cursor_col = 0;
 
-void iolib_init(boot_info_t *binfo) {
-    g_binfo = binfo;
-    // Clear screen
+void iolib_clear(uint32_t color) {
     if (g_binfo && g_binfo->framebuffer_base) {
         uint32_t *fb = (uint32_t *)g_binfo->framebuffer_base;
         for (uint64_t i = 0; i < g_binfo->framebuffer_size / 4; i++) {
-            fb[i] = 0;
+            fb[i] = color;
         }
     }
+}
+
+void iolib_reset_cursor(void) {
+    cursor_row = 0;
+    cursor_col = 0;
+}
+
+void iolib_init(boot_info_t *binfo) {
+    if (binfo) {
+        g_binfo_data = *binfo;
+        g_binfo = &g_binfo_data;
+    }
+    iolib_clear(0x000000); // Black
+    iolib_reset_cursor();
 }
 
 static void draw_pixel(uint32_t x, uint32_t y, uint32_t color) {
