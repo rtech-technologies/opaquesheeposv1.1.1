@@ -19,3 +19,12 @@ size_t svc_get_memory_usage(void) {
     // Stub: returns a mock value
     return 4096;
 }
+
+int streq(const char *s1, const char *s2) {
+    if (!s1 || !s2) return 0;
+    while (*s1 && (*s1 == *s2)) {
+        s1++;
+        s2++;
+    }
+    return *(unsigned char *)s1 == *(unsigned char *)s2;
+}

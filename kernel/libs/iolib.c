@@ -36,6 +36,15 @@ static void serial_putc(char c) {
     outb(COM1, c);
 }
 
+static int is_data_ready(void) {
+    return inb(COM1 + 5) & 0x01;
+}
+
+static char serial_getc(void) {
+    while (is_data_ready() == 0);
+    return inb(COM1);
+}
+
 static size_t cursor_row = 0;
 static size_t cursor_col = 0;
 
@@ -123,4 +132,15 @@ void print(const char *message) {
     for (size_t i = 0; message[i] != '\0'; i++) {
         iolib_putc(message[i]);
     }
+}
+
+char iolib_getc(void) {
+    static int initialized = 0;
+    if (!initialized) {
+        serial_init();
+        initialized = 1;
+    }
+    char c = serial_getc();
+    if (c == '\r') c = '\n'; // Convert CR to NL
+    return c;
 }

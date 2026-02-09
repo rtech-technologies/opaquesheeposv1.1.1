@@ -25,7 +25,8 @@ void kstup(boot_info_t *binfo) {
  * Write your behavior here like a high-level script.
  * Use the System API (sys.h) for all logic.
  */
-void kmain(void) {
+void kmain(boot_info_t *binfo) {
+    (void)binfo;
     print(svc_get_os_name());
     print(" v");
     print(svc_get_os_version());
@@ -35,43 +36,52 @@ void kmain(void) {
     for (;;) {
         const char *cmd = input("> ");
 
-        if (cmd[0] == 'h') {
+        if (streq(cmd, "help")) {
             print("help   - list commands\n");
             print("info   - system status\n");
             print("format - format virtual disk\n");
             print("write  - write test data\n");
             print("read   - read test data\n");
             print("panic  - test fatal error\n");
+            print("clear  - clear screen\n");
         }
 
-        else if (cmd[0] == 'i') {
+        else if (streq(cmd, "info")) {
             print("OS: "); print(svc_get_os_name()); print("\n");
-            print("Memory Used: "); // simple cast for demo
+            print("Version: "); print(svc_get_os_version()); print("\n");
+            print("Memory Used: ");
             if (svc_get_memory_usage() > 0) print("4096 KB\n");
         }
 
-        else if (cmd[0] == 'f') {
+        else if (streq(cmd, "format")) {
             fFormat("OPAQUESHEEP");
         }
 
-        else if (cmd[0] == 'w') {
+        else if (streq(cmd, "write")) {
             fwrite("Hello OpaqueSheep!", 1, 18);
             print("Data written to disk.\n");
         }
 
-        else if (cmd[0] == 'r') {
+        else if (streq(cmd, "read")) {
             char buf[32];
             memset_simple(buf, 0, 32);
             fread(buf, 1, 18);
             print("Disk Contents: "); print(buf); print("\n");
         }
 
-        else if (cmd[0] == 'p') {
+        else if (streq(cmd, "panic")) {
             panic("User requested fatal error.");
         }
 
+        else if (streq(cmd, "clear")) {
+            iolib_clear(0x000000);
+            iolib_reset_cursor();
+        }
+
         else if (cmd[0] != '\0') {
-            print("Unknown command.\n");
+            print("Unknown command: ");
+            print(cmd);
+            print("\n");
         }
     }
 }

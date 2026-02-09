@@ -3,7 +3,7 @@
 #include "../../kernel/include/bootinfo.h"
 
 #define KERNEL_PATH L"\\kernel.bin"
-#define KERNEL_LOAD_ADDRESS 0x200000
+#define KERNEL_LOAD_ADDRESS 0x100000
 
 typedef void (*kernel_entry_t)(boot_info_t *);
 
@@ -116,49 +116,59 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE *system_table) {
         return status;
     }
 
+    // Verify Kernel Magic
+    uint32_t *magic = (uint32_t *)(UINTN)entry;
+    if (*magic != 0x52454b7f) { // 0x7f 'K' 'E' 'R'
+        Print(L"Kernel Magic mismatch! Found: 0x%08x\n", *magic);
+        Print(L"Possible load failure or invalid kernel.bin.\n");
+        return EFI_LOAD_ERROR;
+    }
+
     UINTN map_key = 0;
     UINTN map_size = 0;
     UINTN desc_size = 0;
     UINT32 desc_version = 0;
     EFI_MEMORY_DESCRIPTOR *memory_map = NULL;
 
-    status = uefi_call_wrapper(BS->GetMemoryMap, 5, &map_size, memory_map, &map_key, &desc_size, &desc_version);
-    if (status == EFI_BUFFER_TOO_SMALL) {
-        status = uefi_call_wrapper(BS->AllocatePool, 3, EfiLoaderData, map_size, (void **)&memory_map);
-        if (EFI_ERROR(status)) {
-            Print(L"AllocatePool(MemoryMap) failed: %r\n", status);
-            return status;
-        }
-
-        status = uefi_call_wrapper(BS->GetMemoryMap, 5, &map_size, memory_map, &map_key, &desc_size, &desc_version);
-    }
+    // Allocate a large enough buffer for the memory map to avoid frequent retries
+    map_size = 0;
+    uefi_call_wrapper(BS->GetMemoryMap, 5, &map_size, NULL, &map_key, &desc_size, &desc_version);
+    map_size += 2 * desc_size; // Extra space for unexpected changes
+    status = uefi_call_wrapper(BS->AllocatePool, 3, EfiLoaderData, map_size, (void **)&memory_map);
     if (EFI_ERROR(status)) {
-        Print(L"GetMemoryMap failed: %r\n", status);
+        Print(L"AllocatePool(MemoryMap) failed: %r\n", status);
         return status;
     }
 
-    if (!EFI_ERROR(status)) {
-        status = uefi_call_wrapper(BS->ExitBootServices, 2, image, map_key);
-        if (status == EFI_INVALID_PARAMETER) {
-            // Memory map changed, need to get it again and retry.
-            // In a real robust loader we would loop, but for now we try once more.
-            map_size = 0;
-            uefi_call_wrapper(BS->GetMemoryMap, 5, &map_size, memory_map, &map_key, &desc_size, &desc_version);
-            uefi_call_wrapper(BS->AllocatePool, 3, EfiLoaderData, map_size, (void **)&memory_map);
-            uefi_call_wrapper(BS->GetMemoryMap, 5, &map_size, memory_map, &map_key, &desc_size, &desc_version);
-            status = uefi_call_wrapper(BS->ExitBootServices, 2, image, map_key);
+    // Attempt to ExitBootServices
+    for (int retry = 0; retry < 5; retry++) {
+        status = uefi_call_wrapper(BS->GetMemoryMap, 5, &map_size, memory_map, &map_key, &desc_size, &desc_version);
+        if (EFI_ERROR(status)) {
+            Print(L"GetMemoryMap failed: %r\n", status);
+            return status;
         }
+
+        status = uefi_call_wrapper(BS->ExitBootServices, 2, image, map_key);
+        if (!EFI_ERROR(status)) break;
+
+        if (status != EFI_INVALID_PARAMETER) {
+            Print(L"ExitBootServices failed: %r\n", status);
+            return status;
+        }
+        // If it's EFI_INVALID_PARAMETER, it means the map key is stale.
+        // The loop will get a fresh map and try again.
     }
 
     if (EFI_ERROR(status)) {
-        Print(L"ExitBootServices failed: %r\n", status);
+        // We can't print here safely if we actually partially exited, but usually we haven't.
         return status;
     }
 
     // After ExitBootServices, we MUST NOT call any UEFI services (like Print)
     // The kernel is responsible for its own output from now on.
 
-    kernel_entry_t kernel_entry = (kernel_entry_t)(UINTN)entry;
+    // Skip the 4-byte magic number at the start of the kernel
+    kernel_entry_t kernel_entry = (kernel_entry_t)((UINTN)entry + 4);
     kernel_entry(&binfo);
 
     return EFI_SUCCESS;
