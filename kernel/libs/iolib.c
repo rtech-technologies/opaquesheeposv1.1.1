@@ -63,6 +63,7 @@ void iolib_reset_cursor(void) {
 }
 
 void iolib_init(boot_info_t *binfo) {
+    serial_init();
     if (binfo) {
         g_binfo_data = *binfo;
         g_binfo = &g_binfo_data;
@@ -91,12 +92,6 @@ static void draw_char(char c, uint32_t x, uint32_t y, uint32_t color) {
 }
 
 static void iolib_putc(char c) {
-    static int initialized = 0;
-    if (!initialized) {
-        serial_init();
-        initialized = 1;
-    }
-
     serial_putc(c);
 
     if (!g_binfo || !g_binfo->framebuffer_base) return;
@@ -135,11 +130,6 @@ void print(const char *message) {
 }
 
 char iolib_getc(void) {
-    static int initialized = 0;
-    if (!initialized) {
-        serial_init();
-        initialized = 1;
-    }
     char c = serial_getc();
     if (c == '\r') c = '\n'; // Convert CR to NL
     return c;

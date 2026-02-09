@@ -63,9 +63,14 @@ static EFI_STATUS load_kernel(EFI_FILE_PROTOCOL *file, EFI_PHYSICAL_ADDRESS *ent
 
     status = uefi_call_wrapper(BS->AllocatePages, 4, AllocateAddress, EfiLoaderData, pages, &kernel_addr);
     if (EFI_ERROR(status)) {
-        Print(L"AllocatePages failed: %r\n", status);
+        Print(L"AllocatePages(0x%lx) failed: %r\n", kernel_addr, status);
         uefi_call_wrapper(BS->FreePool, 1, info);
         return status;
+    }
+
+    if (kernel_addr != KERNEL_LOAD_ADDRESS) {
+        Print(L"AllocatePages returned unexpected address: 0x%lx (expected 0x%lx)\n", kernel_addr, (UINT64)KERNEL_LOAD_ADDRESS);
+        return EFI_OUT_OF_RESOURCES;
     }
 
     UINTN read_size = info->FileSize;
@@ -169,12 +174,15 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE *system_table) {
     // After ExitBootServices, we MUST NOT call any UEFI services (like Print)
     // The kernel is responsible for its own output from now on.
 
-    // Skip the 4-byte magic number at the start of the kernel
-    kernel_entry_t kernel_entry = (kernel_entry_t)((UINTN)entry + 4);
+    // Jump to kernel using inline assembly to bypass potential ABI/pointer issues
+    // We pass binfo in RDI (System V ABI)
+    void *target = (void *)((UINTN)entry + 4);
 
-    // Last message before jumping
-    // (Serial output is preferred here if available, but we'll just jump)
-    kernel_entry(&binfo);
+    __asm__ volatile (
+        "mov %0, %%rdi\n\t"
+        "jmp *%1"
+        : : "r"(&binfo), "r"(target) : "rdi"
+    );
 
     return EFI_SUCCESS;
 }

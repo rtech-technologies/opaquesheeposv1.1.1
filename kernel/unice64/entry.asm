@@ -11,18 +11,17 @@ _start:
     dd 0x52454b7f
 
     ; --- Actual Entry Point (_start + 4) ---
-    ; UEFI passes arguments in RCX, RDX, R8, R9 (Microsoft ABI)
-    ; Kernel expects first argument in RDI (System V ABI)
+    ; Bootloader passes binfo in RDI (System V ABI)
 
     ; Setup our own stack
     mov rsp, stack_top
 
-    ; Ensure 16-byte alignment and preserve binfo (RCX) for both calls
-    push rcx     ; [rsp] = binfo, rsp = stack_top - 8
+    ; Ensure 16-byte alignment and preserve binfo (RDI) for both calls
+    push rdi     ; [rsp] = binfo, rsp = stack_top - 8
     sub rsp, 8   ; rsp = stack_top - 16 (16-byte aligned)
 
     ; Call the startup orchestrator
-    mov rdi, rcx
+    ; RDI is already set to binfo
     call kstup
 
     ; Call the main shell loop
@@ -33,6 +32,8 @@ _start:
 .hang:
     hlt
     jmp .hang
+
+section .note.GNU-stack noalloc noexec nowrite progbits
 
 section .bss
 align 16

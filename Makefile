@@ -33,8 +33,8 @@ ifeq ($(EFI_LDS),)
     EFI_LDS := /usr/lib/elf_x86_64_efi.lds
 endif
 
-CFLAGS := -std=gnu11 -ffreestanding -fno-stack-protector -fno-pic -mno-red-zone -Wall -Wextra -Ikernel/include -Ikernel/libs -Ikernel/stup
-LDFLAGS := -T kernel/linker/kernel.ld -nostdlib
+CFLAGS := -std=gnu11 -ffreestanding -fno-stack-protector -fno-pic -fno-pie -m64 -march=x86-64 -mno-red-zone -Wall -Wextra -Ikernel/include -Ikernel/libs -Ikernel/stup
+LDFLAGS := -T kernel/linker/kernel.ld -nostdlib -z max-page-size=0x1000 -z common-page-size=0x1000
 
 BUILD_DIR := build
 
@@ -115,8 +115,10 @@ run: fat_img
 	@which qemu-system-x86_64 > /dev/null || (echo "qemu-system-x86_64 not found. run 'make setup'"; exit 1)
 	@test -f "$(OVMF_FD)" || (echo "OVMF.fd not found. run 'make setup'"; exit 1)
 	qemu-system-x86_64 \
+		-cpu qemu64 \
 		-bios $(OVMF_FD) \
-		-drive file=$(BUILD_DIR)/fat.img,format=raw
+		-drive file=$(BUILD_DIR)/fat.img,format=raw \
+		-serial stdio
 
 clean:
 	rm -rf $(BUILD_DIR)
