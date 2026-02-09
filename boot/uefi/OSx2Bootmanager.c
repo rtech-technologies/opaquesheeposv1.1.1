@@ -3,7 +3,7 @@
 #include "../../kernel/include/bootinfo.h"
 
 #define KERNEL_PATH L"\\kernel.bin"
-#define KERNEL_LOAD_ADDRESS 0x100000
+#define KERNEL_LOAD_ADDRESS 0x200000
 
 typedef void (*kernel_entry_t)(boot_info_t *);
 
@@ -116,6 +116,8 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE *system_table) {
         return status;
     }
 
+    Print(L"Kernel loaded at: 0x%lx\n", entry);
+
     // Verify Kernel Magic
     uint32_t *magic = (uint32_t *)(UINTN)entry;
     if (*magic != 0x52454b7f) { // 0x7f 'K' 'E' 'R'
@@ -169,6 +171,9 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE *system_table) {
 
     // Skip the 4-byte magic number at the start of the kernel
     kernel_entry_t kernel_entry = (kernel_entry_t)((UINTN)entry + 4);
+
+    // Last message before jumping
+    // (Serial output is preferred here if available, but we'll just jump)
     kernel_entry(&binfo);
 
     return EFI_SUCCESS;
