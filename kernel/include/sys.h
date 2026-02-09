@@ -28,8 +28,10 @@ void iolib_reset_cursor(void);
 
 const char *svc_get_os_name(void);
 const char *svc_get_os_version(void);
+uint64_t svc_get_uptime(void);
+size_t svc_get_memory_usage(void);
 
-void kstup(void);
+void kstup(boot_info_t *binfo);
 void kmain(void);
 void panic(const char *message);
 

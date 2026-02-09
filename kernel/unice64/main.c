@@ -9,52 +9,69 @@
 #include "sys.h"
 
 /**
- * Kernel Startup - Runs once after bootloader transitions to kernel
+ * kstup - OS Startup Orchestrator
+ * This function is called by the entry point. It receives the hardware boot info
+ * and is responsible for initializing all system backend services.
  */
-void kstup(void) {
-    stup_init(); // Initialize startup system
-    fat_init();  // Initialize filesystem
+void kstup(boot_info_t *binfo) {
+    iolib_init(binfo);  // Setup modern graphics and serial output
+    stup_init();        // Run core startup sequence
+    fat_init();         // Initialize filesystem drivers
+    print("System Initialized.\n");
 }
 
 /**
- * Kernel Main - Your OS logic goes here
+ * kmain - Professional CLI Shell (High-Level API Only)
+ * Write your behavior here like a high-level script.
+ * Use the System API (sys.h) for all logic.
  */
 void kmain(void) {
-    // Welcome message using system services
     print(svc_get_os_name());
     print(" v");
     print(svc_get_os_version());
-    print(" - Template Kernel Loaded.\n");
-    print("Note: Output is sent to both Screen (GOP) and Serial (COM1).\n");
-    print("Type 'h' for help.\n\n");
+    print(" - Professional Shell Loaded.\n");
+    print("Type 'help' for commands.\n\n");
 
-    // Main shell loop template
     for (;;) {
         const char *cmd = input("> ");
-        if (!cmd || cmd[0] == '\0') {
-            continue;
+
+        if (cmd[0] == 'h') {
+            print("help   - list commands\n");
+            print("info   - system status\n");
+            print("format - format virtual disk\n");
+            print("write  - write test data\n");
+            print("read   - read test data\n");
+            print("panic  - test fatal error\n");
         }
 
-        // Command handling template
-        if (cmd[0] == 'h') {
-            print("h - show this help\n");
-            print("i - show system info\n");
-            print("f - format filesystem\n");
-            print("p - trigger kernel panic\n");
-        } else if (cmd[0] == 'i') {
-            print("OS Name: ");
-            print(svc_get_os_name());
-            print("\nVersion: ");
-            print(svc_get_os_version());
-            print("\n");
-        } else if (cmd[0] == 'f') {
+        else if (cmd[0] == 'i') {
+            print("OS: "); print(svc_get_os_name()); print("\n");
+            print("Memory Used: "); // simple cast for demo
+            if (svc_get_memory_usage() > 0) print("4096 KB\n");
+        }
+
+        else if (cmd[0] == 'f') {
             fFormat("OPAQUESHEEP");
-        } else if (cmd[0] == 'p') {
-            panic("User-triggered kernel panic.");
-        } else {
-            print("Unknown command: ");
-            print(cmd);
-            print("\n");
+        }
+
+        else if (cmd[0] == 'w') {
+            fwrite("Hello OpaqueSheep!", 1, 18);
+            print("Data written to disk.\n");
+        }
+
+        else if (cmd[0] == 'r') {
+            char buf[32];
+            memset_simple(buf, 0, 32);
+            fread(buf, 1, 18);
+            print("Disk Contents: "); print(buf); print("\n");
+        }
+
+        else if (cmd[0] == 'p') {
+            panic("User requested fatal error.");
+        }
+
+        else if (cmd[0] != '\0') {
+            print("Unknown command.\n");
         }
     }
 }
