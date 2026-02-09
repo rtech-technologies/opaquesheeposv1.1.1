@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include "bootinfo.h"
 
 void print(const char *message);
 const char *input(const char *prompt);
@@ -21,12 +22,13 @@ void *memset_simple(void *dest, int value, size_t count);
 
 void fat_init(void);
 void stup_init(void);
+void iolib_init(boot_info_t *binfo);
 
 const char *svc_get_os_name(void);
 const char *svc_get_os_version(void);
 
-void kstup(void);
-void kmain(void);
+void kstup(boot_info_t *binfo);
+void kmain(boot_info_t *binfo);
 void panic(const char *message);
 
 #endif

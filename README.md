@@ -8,6 +8,7 @@ For full API and APL (application) coding documentation, read the in-depth manua
 
 - **Main entry:** `kernel/unice64/main.c` (Template Kernel)
 - **Primary header:** `kernel/include/sys.h`
+- **Boot Info:** `kernel/include/bootinfo.h` (UEFI GOP/Framebuffer data)
 - **Libraries:** `kernel/libs/` (one file per library)
 - **Startup system:** `kernel/stup/` (`kstup()` runs once)
 

@@ -11,7 +11,8 @@
 /**
  * Kernel Startup - Runs once after bootloader transitions to kernel
  */
-void kstup(void) {
+void kstup(boot_info_t *binfo) {
+    iolib_init(binfo);
     stup_init(); // Initialize startup system
     fat_init();  // Initialize filesystem
 }
@@ -19,13 +20,14 @@ void kstup(void) {
 /**
  * Kernel Main - Your OS logic goes here
  */
-void kmain(void) {
+void kmain(boot_info_t *binfo) {
+    (void)binfo;
     // Welcome message using system services
     print(svc_get_os_name());
     print(" v");
     print(svc_get_os_version());
     print(" - Template Kernel Loaded.\n");
-    print("Note: Output is sent to both VGA (0xB8000) and Serial (COM1).\n");
+    print("Note: Output is sent to both Screen (GOP) and Serial (COM1).\n");
     print("Type 'h' for help.\n\n");
 
     // Main shell loop template

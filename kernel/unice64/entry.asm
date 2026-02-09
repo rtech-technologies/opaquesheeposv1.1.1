@@ -7,7 +7,9 @@ extern kstup
 
 _start:
     mov rsp, stack_top
+    push rdi
     call kstup
+    pop rdi
     call kmain
 .hang:
     hlt
