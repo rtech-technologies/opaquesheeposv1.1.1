@@ -90,6 +90,15 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.elf
 	$(OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel \
 		-j .rela -j .reloc --target=efi-app-x86_64 $< $@
 
+limeline: $(BUILD_DIR)/kernel.elf
+	mkdir -p $(BUILD_DIR)/limine
+	cp $(BUILD_DIR)/kernel.elf $(BUILD_DIR)/limine/
+	@echo "TIMEOUT=3" > $(BUILD_DIR)/limine/limine.cfg
+	@echo ":OpaqueSheep OS" >> $(BUILD_DIR)/limine/limine.cfg
+	@echo "PROTOCOL=limine" >> $(BUILD_DIR)/limine/limine.cfg
+	@echo "KERNEL_PATH=boot:///kernel.elf" >> $(BUILD_DIR)/limine/limine.cfg
+	@echo "Limine build prepared in $(BUILD_DIR)/limine"
+
 setup:
 	sudo apt update
 	sudo apt install -y build-essential binutils nasm gnu-efi qemu-system-x86 mtools dosfstools ovmf
@@ -134,4 +143,4 @@ $(BUILD_DIR)/BOOTX64.EFI: boot/uefi/OSx2Bootmanager.c | $(BUILD_DIR)
 	$(EFI_OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel \
 		-j .rela -j .reloc -O efi-app-x86_64 $(BUILD_DIR)/boot.so $@
 
-.PHONY: all clean
+.PHONY: all clean limeline

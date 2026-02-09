@@ -34,14 +34,22 @@ void kmain(boot_info_t *binfo) {
     print("Type 'help' for commands.\n\n");
 
     for (;;) {
-        const char *cmd = input("> ");
+        char *line = (char *)input("> ");
+        if (line[0] == '\0') continue;
+
+        char *args = str_split_once(line, ' ');
+        const char *cmd = line;
 
         if (streq(cmd, "help")) {
             print("help   - list commands\n");
             print("info   - system status\n");
+            print("ls     - list files\n");
+            print("cat    - read file content\n");
+            print("touch  - create empty file\n");
+            print("rm     - delete file\n");
+            print("echo   - write text to file\n");
+            print("uptime - show system uptime\n");
             print("format - format virtual disk\n");
-            print("write  - write test data\n");
-            print("read   - read test data\n");
             print("panic  - test fatal error\n");
             print("clear  - clear screen\n");
         }
@@ -53,20 +61,66 @@ void kmain(boot_info_t *binfo) {
             if (svc_get_memory_usage() > 0) print("4096 KB\n");
         }
 
+        else if (streq(cmd, "ls")) {
+            flist();
+        }
+
+        else if (streq(cmd, "cat")) {
+            if (!args) {
+                print("Usage: cat <path>\n");
+            } else {
+                char buf[512];
+                memset_simple(buf, 0, 512);
+                size_t r = fread(args, buf, 1, 511);
+                if (r > 0) {
+                    print(buf);
+                    print("\n");
+                } else {
+                    print("File not found or empty.\n");
+                }
+            }
+        }
+
+        else if (streq(cmd, "touch")) {
+            if (!args) {
+                print("Usage: touch <path>\n");
+            } else {
+                fwrite(args, "", 1, 0);
+                print("File touched.\n");
+            }
+        }
+
+        else if (streq(cmd, "rm")) {
+            if (!args) {
+                print("Usage: rm <path>\n");
+            } else {
+                if (fdelete(args) == 0) print("File deleted.\n");
+                else print("Error deleting file.\n");
+            }
+        }
+
+        else if (streq(cmd, "echo")) {
+            if (!args) {
+                print("Usage: echo <path> <text>\n");
+            } else {
+                char *text = str_split_once(args, ' ');
+                if (!text) {
+                    print("Usage: echo <path> <text>\n");
+                } else {
+                    fwrite(args, text, 1, strlen(text));
+                    print("Written to "); print(args); print("\n");
+                }
+            }
+        }
+
+        else if (streq(cmd, "uptime")) {
+            print("Uptime: ");
+            if (svc_get_uptime() > 0) print("Active\n");
+            else print("0 ticks\n");
+        }
+
         else if (streq(cmd, "format")) {
             fFormat("OPAQUESHEEP");
-        }
-
-        else if (streq(cmd, "write")) {
-            fwrite("Hello OpaqueSheep!", 1, 18);
-            print("Data written to disk.\n");
-        }
-
-        else if (streq(cmd, "read")) {
-            char buf[32];
-            memset_simple(buf, 0, 32);
-            fread(buf, 1, 18);
-            print("Disk Contents: "); print(buf); print("\n");
         }
 
         else if (streq(cmd, "panic")) {

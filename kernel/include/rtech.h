@@ -53,10 +53,11 @@ typedef unsigned long long size_t;
 
 void print(const char *message);
 const char *input(const char *prompt);
-size_t fwrite(const void *data, size_t size, size_t count);
-size_t fappend(const void *data, size_t size, size_t count);
-size_t fread(void *data, size_t size, size_t count);
+size_t fwrite(const char *path, const void *data, size_t size, size_t count);
+size_t fappend(const char *path, const void *data, size_t size, size_t count);
+size_t fread(const char *path, void *data, size_t size, size_t count);
 int fdelete(const char *path);
+void flist(void);
 
 int dmake(const char *path);
 int dremove(const char *path);
@@ -66,6 +67,9 @@ int fFormat(const char *label);
 void *memcpy_simple(void *dest, const void *src, size_t count);
 void *memset_simple(void *dest, int value, size_t count);
 int streq(const char *s1, const char *s2);
+size_t strlen(const char *s);
+int str_startswith(const char *s, const char *prefix);
+char *str_split_once(char *s, char delim);
 
 const char *svc_get_os_name(void);
 const char *svc_get_os_version(void);
