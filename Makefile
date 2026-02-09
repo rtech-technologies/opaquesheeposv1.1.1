@@ -33,7 +33,7 @@ ifeq ($(EFI_LDS),)
     EFI_LDS := /usr/lib/elf_x86_64_efi.lds
 endif
 
-CFLAGS := -std=gnu11 -ffreestanding -fno-stack-protector -fno-pic -fno-pie -m64 -march=x86-64 -mno-red-zone -Wall -Wextra -Ikernel/include -Ikernel/libs -Ikernel/stup
+CFLAGS := -std=gnu11 -ffreestanding -fno-stack-protector -fno-stack-check -fno-pic -fno-pie -m64 -march=x86-64 -mno-red-zone -maccumulate-outgoing-args -Wall -Wextra -Ikernel/include -Ikernel/libs -Ikernel/stup
 LDFLAGS := -T kernel/linker/kernel.ld -nostdlib -z max-page-size=0x1000 -z common-page-size=0x1000
 
 BUILD_DIR := build
@@ -87,7 +87,8 @@ $(BUILD_DIR)/kernel.elf: $(KERNEL_OBJS)
 	$(LD) $(LDFLAGS) -o $@ $(KERNEL_OBJS)
 
 $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.elf
-	$(OBJCOPY) -O binary $< $@
+	$(OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel \
+		-j .rela -j .reloc --target=efi-app-x86_64 $< $@
 
 setup:
 	sudo apt update

@@ -6,18 +6,15 @@ extern kmain
 extern kstup
 
 _start:
-    ; Kernel Magic: 0x7f 'K' 'E' 'R'
-    ; The bootloader verifies this and then jumps to _start + 4
-    dd 0x52454b7f
-
-    ; --- Actual Entry Point (_start + 4) ---
-    ; Bootloader passes binfo in RDI (System V ABI)
-
-    ; Clear interrupts just in case
-    cli
+    ; --- Kernel Entry Point ---
+    ; Follows UEFI x64 ABI (Microsoft Convention)
+    ; Bootloader passes binfo pointer in RCX
 
     ; Setup our own stack
     mov rsp, stack_top
+
+    ; Bridge ABI: Move RCX (Microsoft) to RDI (System V) for kernel C functions
+    mov rdi, rcx
 
     ; Ensure 16-byte alignment and preserve binfo (RDI) for both calls
     push rdi     ; [rsp] = binfo, rsp = stack_top - 8
