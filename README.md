@@ -33,6 +33,18 @@ Launch OpaqueSheep OS in QEMU:
 make run
 ```
 
+## 💻 Bare-Metal Deployment
+To run OpaqueSheep OS on real hardware:
+1. Format a USB drive as FAT32.
+2. Copy the contents of `build/efi/` to the root of the USB drive.
+   - The path should be `(USB):/EFI/BOOT/BOOTX64.EFI`
+   - The path should be `(USB):/kernel.bin`
+3. (Optional) Copy `build/startup.nsh` to the root of the USB drive for automatic booting.
+4. Plug the USB into your PC and boot via UEFI mode.
+
+Alternatively, you can write the image directly (caution: this will erase the target drive):
+`sudo dd if=build/fat.img of=/dev/sdX bs=1M status=progress` (replace `/dev/sdX` with your USB device).
+
 ## Advanced Usage
 
 ### Makefile Targets

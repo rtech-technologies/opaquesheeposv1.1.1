@@ -1,3 +1,4 @@
+#include "sys.h"
 #include "fat.h"
 #include "iolib.h"
 

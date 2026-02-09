@@ -60,7 +60,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE *system_table) {
     EFI_MEMORY_DESCRIPTOR *memory_map = NULL;
 
     uefi_call_wrapper(BS->GetMemoryMap, 5, &map_size, NULL, &map_key, &desc_size, &desc_version);
-    map_size += 2 * desc_size;
+    map_size += 4096;
     status = uefi_call_wrapper(BS->AllocatePool, 3, EfiLoaderData, map_size, (void **)&memory_map);
     if (EFI_ERROR(status)) return status;
 

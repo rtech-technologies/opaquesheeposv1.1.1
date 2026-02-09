@@ -101,11 +101,13 @@ fat_img: $(BUILD_DIR)/kernel.bin $(BUILD_DIR)/BOOTX64.EFI
 	mkdir -p $(BUILD_DIR)/efi/EFI/BOOT
 	cp $(BUILD_DIR)/BOOTX64.EFI $(BUILD_DIR)/efi/EFI/BOOT/BOOTX64.EFI
 	cp $(BUILD_DIR)/kernel.bin $(BUILD_DIR)/efi/kernel.bin
+	echo "\EFI\BOOT\BOOTX64.EFI" > $(BUILD_DIR)/startup.nsh
 	dd if=/dev/zero of=$(BUILD_DIR)/fat.img bs=1M count=64
 	$(MKFS_FAT) -F 32 $(BUILD_DIR)/fat.img
 	MTOOLSRC=/dev/null $(MMD) -i $(BUILD_DIR)/fat.img ::/EFI ::/EFI/BOOT
 	MTOOLSRC=/dev/null $(MCOPY) -i $(BUILD_DIR)/fat.img $(BUILD_DIR)/efi/EFI/BOOT/BOOTX64.EFI ::/EFI/BOOT/BOOTX64.EFI
 	MTOOLSRC=/dev/null $(MCOPY) -i $(BUILD_DIR)/fat.img $(BUILD_DIR)/efi/kernel.bin ::/kernel.bin
+	MTOOLSRC=/dev/null $(MCOPY) -i $(BUILD_DIR)/fat.img $(BUILD_DIR)/startup.nsh ::/startup.nsh
 
 # OVMF Path Detection
 OVMF_FD := $(firstword $(wildcard /usr/share/ovmf/OVMF.fd) \
@@ -126,7 +128,7 @@ clean:
 
 $(BUILD_DIR)/BOOTX64.EFI: boot/uefi/OSx2Bootmanager.c | $(BUILD_DIR)
 	$(EFI_CC) -I$(EFI_INC) -I$(EFI_INC)/x86_64 -fpic -fshort-wchar -mno-red-zone \
-		-fno-stack-protector -DEFI_FUNCTION_WRAPPER -c $< -o $(BUILD_DIR)/boot.o
+		-ffreestanding -fno-stack-protector -DEFI_FUNCTION_WRAPPER -c $< -o $(BUILD_DIR)/boot.o
 	$(EFI_LD) -nostdlib -znocombreloc -T $(EFI_LDS) -shared -Bsymbolic \
 		$(EFI_CRT0) $(BUILD_DIR)/boot.o -o $(BUILD_DIR)/boot.so -L/usr/lib -lefi -lgnuefi
 	$(EFI_OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel \
