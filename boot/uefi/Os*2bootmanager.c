@@ -3,7 +3,7 @@
 #include "../../kernel/include/bootinfo.h"
 
 #define KERNEL_PATH L"\\kernel.bin"
-#define KERNEL_LOAD_ADDRESS 0x100000
+#define KERNEL_LOAD_ADDRESS 0x200000
 
 typedef void (*kernel_entry_t)(boot_info_t *);
 
@@ -139,6 +139,15 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE *system_table) {
 
     if (!EFI_ERROR(status)) {
         status = uefi_call_wrapper(BS->ExitBootServices, 2, image, map_key);
+        if (status == EFI_INVALID_PARAMETER) {
+            // Memory map changed, need to get it again and retry.
+            // In a real robust loader we would loop, but for now we try once more.
+            map_size = 0;
+            uefi_call_wrapper(BS->GetMemoryMap, 5, &map_size, memory_map, &map_key, &desc_size, &desc_version);
+            uefi_call_wrapper(BS->AllocatePool, 3, EfiLoaderData, map_size, (void **)&memory_map);
+            uefi_call_wrapper(BS->GetMemoryMap, 5, &map_size, memory_map, &map_key, &desc_size, &desc_version);
+            status = uefi_call_wrapper(BS->ExitBootServices, 2, image, map_key);
+        }
     }
 
     if (EFI_ERROR(status)) {
@@ -146,7 +155,8 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE *system_table) {
         return status;
     }
 
-    Print(L"Jumping to kernel at 0x%lx...\n", entry);
+    // After ExitBootServices, we MUST NOT call any UEFI services (like Print)
+    // The kernel is responsible for its own output from now on.
 
     kernel_entry_t kernel_entry = (kernel_entry_t)(UINTN)entry;
     kernel_entry(&binfo);
