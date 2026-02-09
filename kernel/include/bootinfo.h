@@ -1,7 +1,7 @@
 #ifndef OPAQUESHEEP_BOOTINFO_H
 #define OPAQUESHEEP_BOOTINFO_H
 
-#include <stdint.h>
+#include "rtech.h"
 
 typedef struct {
     uint64_t framebuffer_base;

@@ -85,13 +85,14 @@ static EFI_STATUS load_kernel(EFI_FILE_PROTOCOL *file, EFI_PHYSICAL_ADDRESS *ent
     return EFI_SUCCESS;
 }
 
+static boot_info_t binfo;
+
 EFI_STATUS EFIAPI efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE *system_table) {
     InitializeLib(image, system_table);
     Print(L"OpaqueSheep UEFI Bootloader starting...\n");
 
     EFI_STATUS status;
     EFI_GRAPHICS_OUTPUT_PROTOCOL *gop = NULL;
-    boot_info_t binfo;
     ZeroMem(&binfo, sizeof(binfo));
 
     status = LibLocateProtocol(&gEfiGraphicsOutputProtocolGuid, (void **)&gop);
@@ -174,9 +175,17 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE *system_table) {
     // After ExitBootServices, we MUST NOT call any UEFI services (like Print)
     // The kernel is responsible for its own output from now on.
 
+    // We can use serial output here if we had a driver, but for now we just jump.
+
     // Jump to kernel using inline assembly to bypass potential ABI/pointer issues
     // We pass binfo in RDI (System V ABI)
     void *target = (void *)((UINTN)entry + 4);
+
+    // Final check: if target is near 0xB0000, something is wrong
+    if ((UINTN)target < 0x100000) {
+        // This won't be seen if we already exited boot services,
+        // but it's good for debugging before ExitBootServices if moved.
+    }
 
     __asm__ volatile (
         "mov %0, %%rdi\n\t"

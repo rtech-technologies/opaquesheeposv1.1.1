@@ -1,8 +1,7 @@
 #ifndef OPAQUESHEEP_SYS_H
 #define OPAQUESHEEP_SYS_H
 
-#include <stddef.h>
-#include <stdint.h>
+#include "rtech.h"
 #include "bootinfo.h"
 
 void print(const char *message);

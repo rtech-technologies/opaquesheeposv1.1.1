@@ -1,7 +1,7 @@
 #ifndef OPAQUESHEEP_FONT_H
 #define OPAQUESHEEP_FONT_H
 
-#include <stdint.h>
+#include "rtech.h"
 
 static const uint8_t font8x8[128][8] = {
     {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, // 0x0

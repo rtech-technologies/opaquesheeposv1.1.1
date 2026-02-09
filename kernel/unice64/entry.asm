@@ -13,6 +13,9 @@ _start:
     ; --- Actual Entry Point (_start + 4) ---
     ; Bootloader passes binfo in RDI (System V ABI)
 
+    ; Clear interrupts just in case
+    cli
+
     ; Setup our own stack
     mov rsp, stack_top
 
