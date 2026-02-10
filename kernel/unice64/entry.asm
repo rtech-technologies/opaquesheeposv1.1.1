@@ -11,7 +11,7 @@ _start:
     ; Bootloader passes binfo pointer in RCX
 
     ; Setup our own stack
-    mov rsp, stack_top
+    lea rsp, [rel stack_top]
 
     ; Bridge ABI: Move RCX (Microsoft) to RDI (System V) for kernel C functions
     mov rdi, rcx
