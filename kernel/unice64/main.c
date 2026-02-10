@@ -1,19 +1,19 @@
 /**
  * OpaqueSheep OS - Kernel Entry Point
  *
- * This file contains the kstup() and kmain() functions.
- * kstup() is called once at boot time for initialization.
+ * This file contains the STup() and kmain() functions.
+ * STup() is called once at boot time for initialization.
  * kmain() is the main execution loop of the OS.
  */
 
 #include "sys.h"
 
 /**
- * kstup - OS Startup Orchestrator
+ * STup - OS Startup Orchestrator
  * This function is called by the entry point. It receives the hardware boot info
  * and is responsible for initializing all system backend services.
  */
-void kstup(boot_info_t *binfo) {
+void STup(boot_info_t *binfo) {
     iolib_init(binfo);  // Setup modern graphics and serial output
     stup_init();        // Run core startup sequence
     fat_init();         // Initialize filesystem drivers

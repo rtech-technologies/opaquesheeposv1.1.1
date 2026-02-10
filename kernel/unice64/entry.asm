@@ -3,7 +3,7 @@ bits 64
 
 global _start
 extern kmain
-extern kstup
+extern STup
 
 _start:
     ; --- Kernel Entry Point ---
@@ -22,7 +22,7 @@ _start:
 
     ; Call the startup orchestrator
     ; RDI is already set to binfo
-    call kstup
+    call STup
 
     ; Call the main shell loop
     add rsp, 8   ; rsp = stack_top - 8

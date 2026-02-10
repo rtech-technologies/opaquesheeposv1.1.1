@@ -7,7 +7,7 @@
 #include "bootinfo.h"
 
 /* Kernel Lifecycle & Initialization */
-void kstup(boot_info_t *binfo);
+void STup(boot_info_t *binfo);
 void kmain(boot_info_t *binfo);
 void panic(const char *message);
 

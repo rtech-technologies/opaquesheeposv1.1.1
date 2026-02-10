@@ -53,6 +53,10 @@ typedef unsigned long long size_t;
 
 void print(const char *message);
 const char *input(const char *prompt);
+
+/* Demonstration Aliases */
+#define Print print
+#define Input input
 size_t fwrite(const char *path, const void *data, size_t size, size_t count);
 size_t fappend(const char *path, const void *data, size_t size, size_t count);
 size_t fread(const char *path, void *data, size_t size, size_t count);
