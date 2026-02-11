@@ -3,8 +3,10 @@
 
 .extern kstup
 .extern keyboard_handler_c
+.extern disk_handler_c
 .global _start
 .global isr1
+.global isr14
 
 .section .text.prologue
 _start:
@@ -34,6 +36,28 @@ isr1:
     push r10
     push r11
     call keyboard_handler_c
+    pop r11
+    pop r10
+    pop r9
+    pop r8
+    pop rcx
+    pop rdx
+    pop rsi
+    pop rdi
+    pop rax
+    iretq
+
+isr14:
+    push rax
+    push rdi
+    push rsi
+    push rdx
+    push rcx
+    push r8
+    push r9
+    push r10
+    push r11
+    call disk_handler_c
     pop r11
     pop r10
     pop r9
