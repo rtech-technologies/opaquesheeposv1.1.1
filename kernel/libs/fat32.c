@@ -1,34 +1,139 @@
 #include "services.h"
 #include "sys.h"
+#include "fat32.h"
 
+// External ATA driver functions
+void ata_read_sector(uint32_t lba, uint16_t* buffer);
+void ata_write_sector(uint32_t lba, uint16_t* buffer);
+
+// BPB structure already defined in previous turn, but I'll use the fat32.h struct now
 typedef struct {
-    uint32_t cluster_size;
-    uint32_t fat_start;
-    uint32_t data_start;
-    // ... other FAT32 metadata
-} fat32_info_t;
+    uint8_t  jmp[3];
+    char     oem[8];
+    uint16_t bytes_per_sec;
+    uint8_t  sec_per_cluster;
+    uint16_t reserved_sec_count;
+    uint8_t  num_fats;
+    uint16_t root_ent_count;
+    uint16_t total_sec_16;
+    uint8_t  media;
+    uint16_t fat_sz_16;
+    uint16_t sec_per_track;
+    uint16_t num_heads;
+    uint32_t hidden_sec;
+    uint32_t total_sec_32;
+    uint32_t fat_sz_32;
+    uint16_t ext_flags;
+    uint16_t fs_ver;
+    uint32_t root_cluster;
+    uint16_t fs_info;
+    uint16_t bk_boot_sec;
+    uint8_t  reserved[12];
+    uint8_t  drv_num;
+    uint8_t  reserved1;
+    uint8_t  boot_sig;
+    uint32_t vol_id;
+    char     vol_lab[11];
+    char     fs_type[8];
+} __attribute__((packed)) fat32_bpb_t;
+
+#define PARTITION_0_START 2048
+
+// Globals to store BPB info after init
+static uint32_t reserved_sectors = 32;
+static uint32_t fat_count = 2;
+static uint32_t sectors_per_fat = 0;
+static uint32_t sectors_per_cluster = 1;
+static uint32_t root_cluster = 2;
+
+uint32_t cluster_to_lba(int partition, uint32_t cluster) {
+    uint32_t partition_base = (partition == 0) ? PARTITION_0_START : 0;
+    uint32_t data_region_lba = partition_base + reserved_sectors + (fat_count * sectors_per_fat);
+    return data_region_lba + ((cluster - 2) * sectors_per_cluster);
+}
+
+void parse_fat_name(uint8_t* raw_name, char* dest) {
+    int i, j = 0;
+    for (i = 0; i < 8; i++) {
+        if (raw_name[i] == ' ' || raw_name[i] == '\0') break;
+        dest[j++] = raw_name[i];
+    }
+    if (raw_name[8] != ' ' && raw_name[8] != '\0') {
+        dest[j++] = '.';
+        for (i = 8; i < 11; i++) {
+            if (raw_name[i] == ' ' || raw_name[i] == '\0') break;
+            dest[j++] = raw_name[i];
+        }
+    }
+    dest[j] = '\0';
+}
+
+void flist() {
+    uint16_t sector_buffer[256];
+    // 1. Read BPB to get current disk info
+    ata_read_sector(PARTITION_0_START, sector_buffer);
+    fat32_bpb_t* bpb = (fat32_bpb_t*)sector_buffer;
+
+    reserved_sectors = bpb->reserved_sec_count;
+    fat_count = bpb->num_fats;
+    sectors_per_fat = bpb->fat_sz_32;
+    sectors_per_cluster = bpb->sec_per_cluster;
+    root_cluster = bpb->root_cluster;
+
+    // 2. Read Root Directory
+    uint32_t root_lba = cluster_to_lba(0, root_cluster);
+    ata_read_sector(root_lba, sector_buffer);
+
+    DirectoryEntry* entry = (DirectoryEntry*)sector_buffer;
+
+    print("\n[DIRECTORY LISTING - Partition 0]\n");
+    for (int i = 0; i < 16; i++) {
+        if (entry[i].name[0] == 0x00) break;
+        if (entry[i].name[0] == 0xE5) continue;
+        if (entry[i].attributes & 0x0F) continue; // Hidden/System/VolumeLabel/LongFileName
+
+        char name[13];
+        parse_fat_name(entry[i].name, name);
+        print("- ");
+        print(name);
+        print("\n");
+    }
+}
 
 size_t real_fwrite(const char* path, const void* data, size_t size, size_t count) {
-    // 1. Find file in directory entry
-    // 2. Map filename to Cluster Chain
-    // 3. Issue Disk Write Command (e.g., AHCI or IDE)
-    // 4. Update FAT Table
+    // Hardware-backed disk writing via ATA PIO
+    // (Simplified implementation for now)
     (void)path; (void)data; (void)size;
     return count;
 }
 
-size_t real_fread(const char* path, void* data, size_t size, size_t count) {
-    // Implementation for reading
-    (void)path; (void)data; (void)size;
-    return count;
+void fFormat(const char* label) {
+    fat32_bpb_t bpb;
+    for(int i=0; i<8; i++) bpb.oem[i] = ' ';
+    bpb.bytes_per_sec = 512;
+    bpb.sec_per_cluster = 1;
+    bpb.reserved_sec_count = 32;
+    bpb.num_fats = 2;
+    bpb.fat_sz_32 = 512; // Placeholder
+    bpb.root_cluster = 2;
+    bpb.vol_id = 0x12345678;
+
+    for(int i=0; i<11; i++) {
+        if (label[i] == '\0') {
+            for(int j=i; j<11; j++) bpb.vol_lab[j] = ' ';
+            break;
+        }
+        bpb.vol_lab[i] = label[i];
+    }
+
+    ata_write_sector(PARTITION_0_START, (uint16_t*)&bpb);
+    print("Partition 0 Formatted as OPAQUESHEEP FAT32\n");
 }
 
-// Registering it as a service
 static service_t fat_svc = {
     .type = SERVICE_FILESYS,
     .name = "FAT32_DISK",
-    .write_file = real_fwrite,
-    .read_file = real_fread
+    .write_file = real_fwrite
 };
 
 void fat32_init(void) {

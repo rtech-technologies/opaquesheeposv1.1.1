@@ -40,7 +40,6 @@ void putc_real(char c) {
         cursor_x = 0;
     } else {
         // Draw character from font_bitmap
-        // Draw character from font_bitmap
         unsigned char uc = (unsigned char)c;
         unsigned char* glyph = &font_bitmap[uc * 16];
 
