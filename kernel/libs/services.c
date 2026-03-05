@@ -46,7 +46,8 @@ void exec_line(char *line) {
         print("cat    - read file content\n");
         print("touch  - create empty file\n");
         print("rm     - delete file\n");
-        print("echo   - write text to file\n");
+        print("write  - write text to file\n");
+        print("echo   - echo text to screen\n");
         print("uptime - show system uptime\n");
         print("run    - execute RSL script\n");
         print("format - format virtual disk\n");
@@ -99,17 +100,24 @@ void exec_line(char *line) {
         }
     }
 
-    else if (streq(cmd, "echo")) {
+    else if (streq(cmd, "write")) {
         if (!args) {
-            print("Usage: echo <path> <text>\n");
+            print("Usage: write <path> <text>\n");
         } else {
             char *text = str_split_once(args, ' ');
             if (!text) {
-                print("Usage: echo <path> <text>\n");
+                print("Usage: write <path> <text>\n");
             } else {
                 fwrite(args, text, 1, strlen(text));
                 print("Written to "); print(args); print("\n");
             }
+        }
+    }
+
+    else if (streq(cmd, "echo")) {
+        if (args) {
+            print(args);
+            print("\n");
         }
     }
 

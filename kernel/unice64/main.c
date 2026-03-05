@@ -32,25 +32,11 @@ void kmain(boot_info_t *binfo) {
     print("System Partition: GPT ESP Mounted\n");
     print("Data Partition: GPT Main Mounted\n\n");
 
-    print("Welcome! Type something to echo it back, or 'shell' for more.\n");
+    print("Rtech Script Language (RSL) Shell Loaded.\n");
+    print("Type 'help' for commands.\n\n");
 
     for (;;) {
-        const char *line = input("echo> ");
-        if (streq(line, "shell")) {
-            print("Entering Full Shell mode...\n");
-            break;
-        }
-        print("You said: ");
-        print(line);
-        print("\n");
-    }
-
-    /* Fallback to original professional shell */
-    print("\nOpaqueSheep Professional Shell\n");
-    print("Type 'help' for commands.\n");
-
-    for (;;) {
-        char *line = (char *)input("> ");
+        char *line = (char *)input("rsl> ");
         exec_line(line);
     }
 }
