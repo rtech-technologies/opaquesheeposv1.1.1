@@ -101,22 +101,36 @@ limeline: $(BUILD_DIR)/kernel.elf
 
 setup:
 	sudo apt update
-	sudo apt install -y build-essential binutils nasm gnu-efi qemu-system-x86 mtools dosfstools ovmf
+	sudo apt install -y build-essential binutils nasm gnu-efi qemu-system-x86 mtools dosfstools ovmf gdisk parted
 
 fat_img: $(BUILD_DIR)/kernel.bin $(BUILD_DIR)/BOOTX64.EFI
 	@if [ -z "$(MKFS_FAT)" ]; then echo "Error: mkfs.fat not found. Run 'make setup' first."; exit 1; fi
 	@if [ -z "$(MMD)" ]; then echo "Error: mmd not found. Run 'make setup' first."; exit 1; fi
 	@if [ -z "$(MCOPY)" ]; then echo "Error: mcopy not found. Run 'make setup' first."; exit 1; fi
+	@if [ -z "$$(which sgdisk)" ]; then echo "Error: sgdisk not found. Run 'make setup' first."; exit 1; fi
 	mkdir -p $(BUILD_DIR)/efi/EFI/BOOT
 	cp $(BUILD_DIR)/BOOTX64.EFI $(BUILD_DIR)/efi/EFI/BOOT/BOOTX64.EFI
 	cp $(BUILD_DIR)/kernel.bin $(BUILD_DIR)/efi/kernel.bin
 	echo "\EFI\BOOT\BOOTX64.EFI" > $(BUILD_DIR)/startup.nsh
-	dd if=/dev/zero of=$(BUILD_DIR)/fat.img bs=1M count=64
-	$(MKFS_FAT) -F 32 $(BUILD_DIR)/fat.img
-	MTOOLSRC=/dev/null $(MMD) -i $(BUILD_DIR)/fat.img ::/EFI ::/EFI/BOOT
-	MTOOLSRC=/dev/null $(MCOPY) -i $(BUILD_DIR)/fat.img $(BUILD_DIR)/efi/EFI/BOOT/BOOTX64.EFI ::/EFI/BOOT/BOOTX64.EFI
-	MTOOLSRC=/dev/null $(MCOPY) -i $(BUILD_DIR)/fat.img $(BUILD_DIR)/efi/kernel.bin ::/kernel.bin
-	MTOOLSRC=/dev/null $(MCOPY) -i $(BUILD_DIR)/fat.img $(BUILD_DIR)/startup.nsh ::/startup.nsh
+	# Create a 128MB disk image
+	dd if=/dev/zero of=$(BUILD_DIR)/fat.img bs=1M count=128
+	# Create GPT partition table and partitions (ESP: 64MB, Data: ~64MB)
+	sgdisk -Z $(BUILD_DIR)/fat.img
+	sgdisk -n 1:2048:133119 -t 1:ef00 -c 1:"EFI System Partition" $(BUILD_DIR)/fat.img
+	sgdisk -n 2:133120:260000 -t 2:8300 -c 2:"OpaqueSheep Data" $(BUILD_DIR)/fat.img
+	# Format and populate ESP (Partition 1)
+	dd if=/dev/zero of=$(BUILD_DIR)/esp.img bs=512 count=131072
+	$(MKFS_FAT) -F 32 $(BUILD_DIR)/esp.img
+	MTOOLSRC=/dev/null $(MMD) -i $(BUILD_DIR)/esp.img ::/EFI ::/EFI/BOOT
+	MTOOLSRC=/dev/null $(MCOPY) -i $(BUILD_DIR)/esp.img $(BUILD_DIR)/efi/EFI/BOOT/BOOTX64.EFI ::/EFI/BOOT/BOOTX64.EFI
+	MTOOLSRC=/dev/null $(MCOPY) -i $(BUILD_DIR)/esp.img $(BUILD_DIR)/efi/kernel.bin ::/kernel.bin
+	MTOOLSRC=/dev/null $(MCOPY) -i $(BUILD_DIR)/esp.img $(BUILD_DIR)/startup.nsh ::/startup.nsh
+	# Format Data (Partition 2)
+	dd if=/dev/zero of=$(BUILD_DIR)/data.img bs=512 count=126881
+	$(MKFS_FAT) -F 32 $(BUILD_DIR)/data.img
+	# Stitch partitions into the disk image
+	dd if=$(BUILD_DIR)/esp.img of=$(BUILD_DIR)/fat.img bs=512 seek=2048 conv=notrunc
+	dd if=$(BUILD_DIR)/data.img of=$(BUILD_DIR)/fat.img bs=512 seek=133120 conv=notrunc
 
 # OVMF Path Detection
 OVMF_FD := $(firstword $(wildcard /usr/share/ovmf/OVMF.fd) \

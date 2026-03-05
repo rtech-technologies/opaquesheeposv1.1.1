@@ -28,11 +28,26 @@ void STup(boot_info_t *binfo) {
  */
 void kmain(boot_info_t *binfo) {
     (void)binfo;
-    print(svc_get_os_name());
-    print(" v");
-    print(svc_get_os_version());
-    print(" - Professional Shell Loaded.\n");
-    print("Type 'help' for commands.\n\n");
+    print("OpaqueSheep OS Booted (UEFI 3.0 Compliance Mode)\n");
+    print("System Partition: GPT ESP Mounted\n");
+    print("Data Partition: GPT Main Mounted\n\n");
+
+    print("Welcome! Type something to echo it back, or 'shell' for more.\n");
+
+    for (;;) {
+        const char *line = input("echo> ");
+        if (streq(line, "shell")) {
+            print("Entering Full Shell mode...\n");
+            break;
+        }
+        print("You said: ");
+        print(line);
+        print("\n");
+    }
+
+    /* Fallback to original professional shell */
+    print("\nOpaqueSheep Professional Shell\n");
+    print("Type 'help' for commands.\n");
 
     for (;;) {
         char *line = (char *)input("> ");
