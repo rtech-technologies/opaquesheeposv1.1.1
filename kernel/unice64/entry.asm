@@ -1,4 +1,4 @@
-section .text
+section .entry
 bits 64
 
 global _start

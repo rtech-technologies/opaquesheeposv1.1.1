@@ -33,9 +33,22 @@ void kmain(boot_info_t *binfo) {
     print("System Partition: GPT ESP Mounted\n");
     print("Data Partition: GPT Main Mounted\n\n");
 
-    print("Rtech Script Language (RSL) Shell Loaded.\n");
-    print("Type 'help' for commands.\n\n");
+    print("Welcome! Type something to echo it back, or 'shell' for RSL.\n");
 
+    for (;;) {
+        const char *line = input("echo> ");
+        if (streq(line, "shell")) {
+            print("Entering Rtech Script Language (RSL) Shell...\n");
+            break;
+        }
+        if (line[0] != '\0') {
+            print("You said: ");
+            print(line);
+            print("\n");
+        }
+    }
+
+    print("\nRSL Shell Loaded. Type 'help' for commands.\n\n");
     for (;;) {
         char *line = (char *)input("rsl> ");
         exec_line(line);

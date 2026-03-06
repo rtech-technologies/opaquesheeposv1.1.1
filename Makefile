@@ -87,8 +87,7 @@ $(BUILD_DIR)/kernel.elf: $(KERNEL_OBJS)
 	$(LD) $(LDFLAGS) -o $@ $(KERNEL_OBJS)
 
 $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/kernel.elf
-	$(OBJCOPY) -j .text -j .rodata -j .sdata -j .data -j .dynamic -j .dynsym -j .rel \
-		-j .rela -j .reloc --target=efi-app-x86_64 $< $@
+	$(OBJCOPY) -O binary $< $@
 
 limeline: $(BUILD_DIR)/kernel.elf
 	mkdir -p $(BUILD_DIR)/limine
