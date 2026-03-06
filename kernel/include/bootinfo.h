@@ -9,6 +9,7 @@ typedef struct {
     uint32_t horizontal_resolution;
     uint32_t vertical_resolution;
     uint32_t pixels_per_scanline;
+    uint64_t data_partition_lba;
 } boot_info_t;
 
 #endif

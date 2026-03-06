@@ -13,6 +13,7 @@ void panic(const char *message);
 
 /* Internal System Init (Called by kstup) */
 void fat_init(void);
+void fat_init_with_info(boot_info_t *binfo);
 void stup_init(void);
 void iolib_init(boot_info_t *binfo);
 

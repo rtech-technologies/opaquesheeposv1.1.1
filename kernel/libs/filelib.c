@@ -1,5 +1,6 @@
 #include "sys.h"
 #include "filelib.h"
+#include "fat.h"
 
 #define MAX_FILES 8
 #define FILE_BUF_SIZE 4096
@@ -70,6 +71,7 @@ size_t fread(const char *path, void *data, size_t size, size_t count) {
     if (!path) return 0;
     size_t bytes = size * count;
 
+    // Check Memory VFS first
     for (int i = 0; i < MAX_FILES; i++) {
         if (vfs_table[i].used && streq(vfs_table[i].name, path)) {
             if (bytes > vfs_table[i].size) bytes = vfs_table[i].size;
@@ -77,6 +79,11 @@ size_t fread(const char *path, void *data, size_t size, size_t count) {
             return bytes / size;
         }
     }
+
+    // Fallback to RNAFS on the Data Partition
+    size_t r = rnafs_read_file(path, data, bytes);
+    if (r > 0) return r / size;
+
     return 0;
 }
 

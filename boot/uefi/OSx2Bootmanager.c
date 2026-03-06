@@ -74,6 +74,9 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE image, EFI_SYSTEM_TABLE *system_table) {
 
     if (EFI_ERROR(status)) return status;
 
+    // Find the data partition offset (simplified: we know it is partition 2)
+    binfo.data_partition_lba = 133120;
+
     // Transition to Kernel (UEFI x64 ABI: RCX = first argument)
     __asm__ volatile (
         "mov %0, %%rcx\n\t"

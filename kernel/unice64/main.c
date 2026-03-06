@@ -16,6 +16,7 @@
 void STup(boot_info_t *binfo) {
     iolib_init(binfo);  // Setup modern graphics and serial output
     stup_init();        // Run core startup sequence
+    fat_init_with_info(binfo);
     fat_init();         // Initialize filesystem drivers
     print("System Initialized.\n");
 }
