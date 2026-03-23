@@ -3,9 +3,9 @@
 
 #include "sys.h"
 
-size_t fwrite(const void *data, size_t size, size_t count);
-size_t fappend(const void *data, size_t size, size_t count);
-size_t fread(void *data, size_t size, size_t count);
+size_t fwrite(const char *path, const void *data, size_t size, size_t count);
+size_t fappend(const char *path, const void *data, size_t size, size_t count);
+size_t fread(const char *path, void *data, size_t size, size_t count);
 int fdelete(const char *path);
 
 int dmake(const char *path);

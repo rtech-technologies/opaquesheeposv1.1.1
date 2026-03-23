@@ -1,3 +1,4 @@
+#include "sys.h"
 #include "mem.h"
 
 void *memcpy_simple(void *dest, const void *src, size_t count) {

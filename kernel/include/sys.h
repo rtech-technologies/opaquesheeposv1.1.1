@@ -1,29 +1,20 @@
 #ifndef OPAQUESHEEP_SYS_H
 #define OPAQUESHEEP_SYS_H
 
-#include <stddef.h>
-#include <stdint.h>
+/* OpaqueSheep OS - High-Level System API Wrapper for Rtech Standard Library */
 
-void print(const char *message);
-const char *input(const char *prompt);
-size_t fwrite(const void *data, size_t size, size_t count);
-size_t fappend(const void *data, size_t size, size_t count);
-size_t fread(void *data, size_t size, size_t count);
-int fdelete(const char *path);
+#include "rtech.h"
+#include "bootinfo.h"
 
-int dmake(const char *path);
-int dremove(const char *path);
-int dmove(const char *from, const char *to);
-int fFormat(const char *label);
-
-void *memcpy_simple(void *dest, const void *src, size_t count);
-void *memset_simple(void *dest, int value, size_t count);
-
-void fat_init(void);
-void stup_init(void);
-
-void kstup(void);
-void kmain(void);
+/* Kernel Lifecycle & Initialization */
+void STup(boot_info_t *binfo);
+void kmain(boot_info_t *binfo);
 void panic(const char *message);
+
+/* Internal System Init (Called by kstup) */
+void fat_init(void);
+void fat_init_with_info(boot_info_t *binfo);
+void stup_init(void);
+void iolib_init(boot_info_t *binfo);
 
 #endif

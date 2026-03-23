@@ -6,52 +6,59 @@ For full API and APL (application) coding documentation, read the in-depth manua
 
 ## Basics
 
-- **Main entry:** `kernel/unice64/main.c`
+- **Main entry:** `kernel/unice64/main.c` (Template Kernel)
 - **Primary header:** `kernel/include/sys.h`
-- **Libraries:** `kernel/libs/` (each lib is one file)
+- **Boot Info:** `kernel/include/bootinfo.h` (UEFI GOP/Framebuffer data)
+- **Libraries:** `kernel/libs/` (one file per library)
 - **Startup system:** `kernel/stup/` (`kstup()` runs once)
 
-## Quick Start (Build + Run)
+## Quick Start (Automated)
 
-### Install requirements (Debian/Ubuntu)
-
+### 1. Setup Environment (One-time)
+Install all necessary build and emulation dependencies (Debian/Ubuntu):
+```bash
+make setup
 ```
-sudo apt update
-sudo apt install -y build-essential binutils nasm gnu-efi qemu-system-x86 mtools dosfstools ovmf
-```
 
-### Build
-
-```
+### 2. Build OS
+Compile the kernel, bootloader, and generate the bootable FAT32 image:
+```bash
 make
-make uefi
+```
+*Note: The Makefile automatically detects if `x86_64-elf-gcc` is present and falls back to host `gcc` if needed.*
+
+### 3. Run OS
+Launch OpaqueSheep OS in QEMU:
+```bash
+make run
 ```
 
-Artifacts:
-- `build/kernel.elf`
-- `build/kernel.bin`
-- `build/BOOTX64.EFI`
+## 💻 Bare-Metal Deployment
+To run OpaqueSheep OS on real hardware:
+1. Format a USB drive as FAT32.
+2. Copy the contents of `build/efi/` to the root of the USB drive.
+   - The path should be `(USB):/EFI/BOOT/BOOTX64.EFI`
+   - The path should be `(USB):/kernel.bin`
+3. (Optional) Copy `build/startup.nsh` to the root of the USB drive for automatic booting.
+4. Plug the USB into your PC and boot via UEFI mode.
 
-### Run (UEFI + QEMU)
+Alternatively, you can write the image directly (caution: this will erase the target drive):
+`sudo dd if=build/fat.img of=/dev/sdX bs=1M status=progress` (replace `/dev/sdX` with your USB device).
 
-```
-mkdir -p build/efi/EFI/BOOT
-cp build/BOOTX64.EFI build/efi/EFI/BOOT/BOOTX64.EFI
-cp build/kernel.bin build/efi/kernel.bin
+## Advanced Usage
 
-dd if=/dev/zero of=build/fat.img bs=1M count=64
-mkfs.fat -F 32 build/fat.img
-mmd -i build/fat.img ::/EFI ::/EFI/BOOT
-mcopy -i build/fat.img build/efi/EFI/BOOT/BOOTX64.EFI ::/EFI/BOOT/BOOTX64.EFI
-mcopy -i build/fat.img build/efi/kernel.bin ::/kernel.bin
-```
+### Makefile Targets
+- `make all`: (Default) Builds everything and creates `build/fat.img`.
+- `make fat_img`: Specifically triggers the bootable image creation.
+- `make uefi`: Builds the UEFI bootloader only.
+- `make clean`: Removes all build artifacts.
 
-```
-qemu-system-x86_64 \
-  -drive if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE.fd \
-  -drive if=pflash,format=raw,file=/usr/share/OVMF/OVMF_VARS.fd \
-  -drive file=build/fat.img,format=raw
-```
+### Repository Structure
+- `boot/`: UEFI bootloader source.
+- `kernel/include/`: Global kernel headers.
+- `kernel/libs/`: Modular kernel libraries and services.
+- `kernel/unice64/`: Kernel entry point and main loop.
+- `build/`: Output directory for binaries and images (git-ignored).
 
 ## Where to Learn More
 
