@@ -1,0 +1,22 @@
+def generate():
+    font = [0] * 4096
+    # Simple 'A' (0x41)
+    a_glyph = [0x00, 0x00, 0x10, 0x38, 0x6C, 0xC6, 0xC6, 0xFE, 0xC6, 0xC6, 0xC6, 0xC6, 0x00, 0x00, 0x00, 0x00]
+    for i, b in enumerate(a_glyph):
+        font[0x41 * 16 + i] = b
+
+    # Simple '!' (0x21)
+    excl_glyph = [0x00, 0x00, 0x18, 0x3C, 0x3C, 0x3C, 0x18, 0x18, 0x18, 0x00, 0x18, 0x18, 0x00, 0x00, 0x00, 0x00]
+    for i, b in enumerate(excl_glyph):
+        font[0x21 * 16 + i] = b
+
+    print("#ifndef FONT_H")
+    print("#define FONT_H")
+    print("unsigned char font_bitmap[4096] = {")
+    for i in range(0, 4096, 16):
+        row = font[i:i+16]
+        print("    " + ", ".join(f"0x{b:02X}" for b in row) + ",")
+    print("};")
+    print("#endif")
+
+generate()
